@@ -1157,17 +1157,19 @@ class SpendingPlanViewSet(viewsets.ModelViewSet):
             )
         ).distinct()
 
-        # Conta il totale dei piani (senza filtro temporale)
+        # Filtra piani nascosti PRIMA di contare (i nascosti non devono mai essere contati)
+        base_queryset = base_queryset.filter(is_hidden=False)
+
+        # Conta il totale dei piani visibili (senza filtro temporale, ma senza nascosti)
         total_count = base_queryset.count()
 
         # Applica filtro temporale se richiesto
         if not show_all:
             today = timezone.now().date()
             three_months_from_now = today + relativedelta(months=3)
-            base_queryset = base_queryset.filter(start_date__lte=three_months_from_now)
-
-        # Filtra piani nascosti
-        queryset = base_queryset.filter(is_hidden=False)
+            queryset = base_queryset.filter(start_date__lte=three_months_from_now)
+        else:
+            queryset = base_queryset
 
         # Ordina: piani pinnati per primi, poi per data di inizio (più recenti prima)
         queryset = queryset.order_by('-is_pinned_by_user', '-start_date')
