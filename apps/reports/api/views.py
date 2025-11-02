@@ -1098,6 +1098,7 @@ class SpendingPlanViewSet(viewsets.ModelViewSet):
 
         user = request.user
         show_all = request.query_params.get('show_all', 'false').lower() == 'true'
+        show_hidden = request.query_params.get('show_hidden', 'false').lower() == 'true'
 
         # Base queryset (stesso logic di get_queryset)
         personal_plans = Q(created_by=user, plan_scope='personal')
@@ -1157,10 +1158,15 @@ class SpendingPlanViewSet(viewsets.ModelViewSet):
             )
         ).distinct()
 
-        # Filtra piani nascosti PRIMA di contare (i nascosti non devono mai essere contati)
-        base_queryset = base_queryset.filter(is_hidden=False)
+        # Filtra per piani nascosti o visibili in base al parametro show_hidden
+        if show_hidden:
+            # Mostra SOLO i piani nascosti
+            base_queryset = base_queryset.filter(is_hidden=True)
+        else:
+            # Mostra SOLO i piani visibili (comportamento default)
+            base_queryset = base_queryset.filter(is_hidden=False)
 
-        # Conta il totale dei piani visibili (senza filtro temporale, ma senza nascosti)
+        # Conta il totale dei piani (nascosti o visibili in base al filtro)
         total_count = base_queryset.count()
 
         # Applica filtro temporale se richiesto
@@ -1182,7 +1188,8 @@ class SpendingPlanViewSet(viewsets.ModelViewSet):
             'results': serializer.data,
             'count': len(serializer.data),
             'total_count': total_count,
-            'show_all': show_all
+            'show_all': show_all,
+            'show_hidden': show_hidden
         }
 
         return Response(response_data)
