@@ -222,15 +222,19 @@ SIMPLE_JWT = {
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # For production
 
 # SMTP settings for Zoho Mail
-EMAIL_HOST = 'smtp.zoho.com'  # Server globale invece di .eu
+EMAIL_HOST = 'smtp.zoho.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'serra.marco@mycrisisfamily.com'  # Account principale Zoho
-EMAIL_HOST_PASSWORD = 'Mumble100%'  # Password Zoho
+EMAIL_HOST_USER = 'no-reply@mycrisisfamily.com'  # Account no-reply dedicato
+EMAIL_HOST_PASSWORD = 'Mumble100%'  # Password account no-reply
 
 # Default email settings
-DEFAULT_FROM_EMAIL = 'My Crazy Family <no-reply@mycrisisfamily.com>'
-EMAIL_SUBJECT_PREFIX = '[My Crazy Family] '
+DEFAULT_FROM_EMAIL = 'MyCrisisFamily <no-reply@mycrisisfamily.com>'
+SERVER_EMAIL = 'no-reply@mycrisisfamily.com'  # For error notifications
+EMAIL_SUBJECT_PREFIX = '[MyCrisisFamily] '
+
+# Email timeout settings
+EMAIL_TIMEOUT = 10  # Timeout in secondi per connessione SMTP
 
 # Frontend URL settings
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://mycrisisfamily.com/app')

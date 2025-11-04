@@ -115,6 +115,18 @@ class User(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Preferenze utente
+    preferred_language = models.CharField(
+        max_length=10,
+        choices=[
+            ('it-IT', 'Italiano'),
+            ('en-US', 'English'),
+        ],
+        default='it-IT',
+        verbose_name="Lingua Preferita",
+        help_text="Lingua preferita dall'utente per l'interfaccia"
+    )
+
     # === ENCRYPTION FIELDS ===
     encrypted_profile = models.JSONField(
         default=dict,

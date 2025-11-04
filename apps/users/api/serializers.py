@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.utils import timezone
 from apps.users.models import UserProfile, Family, FamilyInvitation
+from apps.users.services import EmailService
 
 User = get_user_model()
 
@@ -32,7 +33,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
             'is_active', 'date_joined', 'last_login', 'profile',
-            'family', 'family_name', 'family_detail'
+            'family', 'family_name', 'family_detail', 'preferred_language'
         ]
         read_only_fields = ['id', 'date_joined', 'last_login', 'family']
 
@@ -152,6 +153,13 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 setattr(profile, key, value)
             profile.save()
 
+        # Invia email di benvenuto
+        try:
+            EmailService.send_welcome_email(user)
+        except Exception as e:
+            # Log dell'errore ma non blocca la registrazione
+            print(f"⚠️ Failed to send welcome email: {e}")
+
         return user
 
 
@@ -170,7 +178,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'email', 'first_name', 'last_name',
+            'email', 'first_name', 'last_name', 'preferred_language',
             'role', 'family_role', 'phone_number', 'birth_date',
             'profile_picture', 'bio', 'ui_preferences'
         ]
@@ -248,7 +256,7 @@ class MCFTokenObtainPairSerializer(TokenObtainPairSerializer):
     
     def validate(self, attrs):
         data = super().validate(attrs)
-        
+
         # Aggiungi dati utente alla risposta
         user = self.user
         data['user'] = {
@@ -257,6 +265,7 @@ class MCFTokenObtainPairSerializer(TokenObtainPairSerializer):
             'first_name': user.first_name,
             'last_name': user.last_name,
             'name': user.get_full_name(),
+            'preferred_language': user.preferred_language,
         }
         
         # Aggiungi dati del profilo se esiste

@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from apps.users.services import EmailService
 from .serializers import (
     UserSerializer,
     UserCreateSerializer,
@@ -285,49 +286,15 @@ class PasswordResetRequestView(generics.GenericAPIView):
                 from apps.users.models import PasswordResetToken
                 reset_token = PasswordResetToken.objects.create(user=user)
 
-                # Genera il link completo e invia email
-                from django.conf import settings
-                from django.core.mail import send_mail
-
-                reset_url = f"{settings.FRONTEND_URL}/#/reset-password?token={reset_token.token}"
-
-                # Invia email con il link
-                subject = 'Reset Password - My Crazy Family'
-                message = f"""
-Ciao {user.first_name if user.first_name else user.email},
-
-Hai richiesto il reset della password per il tuo account My Crazy Family.
-
-Clicca sul link seguente per reimpostare la password:
-{reset_url}
-
-Questo link è valido per 24 ore.
-
-Se non hai richiesto tu questo reset, puoi ignorare questa email.
-
-Saluti,
-Il team di My Crazy Family
-                """.strip()
-
+                # Invia email tramite EmailService
                 try:
-                    send_mail(
-                        subject,
-                        message,
-                        settings.DEFAULT_FROM_EMAIL,
-                        [user.email],
-                        fail_silently=False,
-                    )
-                    print(f"Password reset email sent to {user.email}")
+                    EmailService.send_password_reset_email(user, reset_token)
                 except Exception as e:
-                    print(f"Failed to send email to {user.email}: {e}")
-
-                # Per testing, logga anche il link
-                print(f"Password reset link for {user.email}: {reset_url}")
+                    print(f"⚠️ Failed to send password reset email: {e}")
 
                 # Restituisci sempre successo per sicurezza
                 return Response({
-                    'detail': 'Se l\'email esiste nel sistema, riceverai un link per il reset della password.',
-                    'reset_url': reset_url  # Solo per testing, rimuovere in produzione
+                    'detail': 'Se l\'email esiste nel sistema, riceverai un link per il reset della password.'
                 }, status=status.HTTP_200_OK)
 
             except User.DoesNotExist:
