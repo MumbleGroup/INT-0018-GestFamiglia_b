@@ -30,7 +30,7 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     ordering = ['-date', '-created_at']
     
     def get_queryset(self):
-        """Restituisce le spese dell'utente e quelle appartenenti a piani di spesa condivisi"""
+        """Restituisce le spese dell'utente e della sua famiglia"""
         user = self.request.user
 
         # Se l'utente non appartiene a nessuna famiglia, vede solo le sue spese
@@ -39,13 +39,11 @@ class ExpenseViewSet(viewsets.ModelViewSet):
                 'user', 'category', 'subcategory', 'spending_plan'
             ).prefetch_related('shared_with', 'attachments', 'quote')
 
-        # Restituisce:
-        # 1. Le spese create dall'utente stesso
-        # 2. Le spese che appartengono a piani di spesa condivisi con la famiglia
-        # 3. Le spese condivise direttamente con l'utente
+        # Restituisce tutte le spese della famiglia:
+        # 1. Tutte le spese dei membri della stessa famiglia
+        # 2. Le spese condivise direttamente con l'utente
         return Expense.objects.filter(
-            Q(user=user) |  # Spese proprie
-            Q(spending_plan__plan_scope='family', user__family=user.family) |  # Spese di piani condivisi
+            Q(user__family=user.family) |  # Tutte le spese della famiglia
             Q(shared_with=user)  # Spese condivise direttamente
         ).distinct().select_related(
             'user', 'category', 'subcategory', 'spending_plan'
