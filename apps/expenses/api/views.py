@@ -35,17 +35,26 @@ class ExpenseViewSet(viewsets.ModelViewSet):
 
         # Se l'utente non appartiene a nessuna famiglia, vede solo le sue spese
         if not user.family:
-            return Expense.objects.filter(user=user).select_related(
-                'user', 'category', 'subcategory', 'spending_plan'
-            ).prefetch_related('shared_with', 'attachments', 'quote')
+            queryset = Expense.objects.filter(user=user)
+        else:
+            # Restituisce tutte le spese della famiglia:
+            # 1. Tutte le spese dei membri della stessa famiglia
+            # 2. Le spese condivise direttamente con l'utente
+            queryset = Expense.objects.filter(
+                Q(user__family=user.family) |  # Tutte le spese della famiglia
+                Q(shared_with=user)  # Spese condivise direttamente
+            ).distinct()
 
-        # Restituisce tutte le spese della famiglia:
-        # 1. Tutte le spese dei membri della stessa famiglia
-        # 2. Le spese condivise direttamente con l'utente
-        return Expense.objects.filter(
-            Q(user__family=user.family) |  # Tutte le spese della famiglia
-            Q(shared_with=user)  # Spese condivise direttamente
-        ).distinct().select_related(
+        # Filtro per range di date
+        date_from = self.request.query_params.get('date_from')
+        date_to = self.request.query_params.get('date_to')
+
+        if date_from:
+            queryset = queryset.filter(date__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(date__lte=date_to)
+
+        return queryset.select_related(
             'user', 'category', 'subcategory', 'spending_plan'
         ).prefetch_related('shared_with', 'attachments', 'quote')
     
