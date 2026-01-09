@@ -106,6 +106,11 @@ class Expense(models.Model):
         default=False,
         verbose_name="Spesa ricorrente"
     )
+    is_personal = models.BooleanField(
+        default=False,
+        verbose_name="Spesa personale",
+        help_text="Se True, la spesa è visibile solo al creatore e non condivisa con la famiglia"
+    )
     budget = models.ForeignKey(
         'Budget',
         on_delete=models.SET_NULL,

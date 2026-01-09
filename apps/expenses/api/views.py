@@ -24,26 +24,33 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     """ViewSet per la gestione delle spese"""
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category', 'subcategory', 'status', 'payment_method', 'is_recurring', 'date', 'planned_expense']
+    filterset_fields = ['category', 'subcategory', 'status', 'payment_method', 'is_recurring', 'is_personal', 'date', 'planned_expense']
     search_fields = ['description', 'notes', 'category__name', 'subcategory__name']
     ordering_fields = ['date', 'amount', 'created_at']
     ordering = ['-date', '-created_at']
-    
+
     def get_queryset(self):
         """Restituisce le spese dell'utente e della sua famiglia"""
         user = self.request.user
 
-        # Se l'utente non appartiene a nessuna famiglia, vede solo le sue spese
-        if not user.family:
-            queryset = Expense.objects.filter(user=user)
+        # Controlla se stiamo richiedendo spese personali
+        is_personal = self.request.query_params.get('is_personal')
+
+        if is_personal == 'true':
+            # Solo spese personali dell'utente corrente
+            queryset = Expense.objects.filter(user=user, is_personal=True)
         else:
-            # Restituisce tutte le spese della famiglia:
-            # 1. Tutte le spese dei membri della stessa famiglia
-            # 2. Le spese condivise direttamente con l'utente
-            queryset = Expense.objects.filter(
-                Q(user__family=user.family) |  # Tutte le spese della famiglia
-                Q(shared_with=user)  # Spese condivise direttamente
-            ).distinct()
+            # Se l'utente non appartiene a nessuna famiglia, vede solo le sue spese
+            if not user.family:
+                queryset = Expense.objects.filter(user=user, is_personal=False)
+            else:
+                # Restituisce tutte le spese della famiglia (escludendo le personali degli altri):
+                # 1. Tutte le spese NON personali dei membri della stessa famiglia
+                # 2. Le spese condivise direttamente con l'utente
+                queryset = Expense.objects.filter(
+                    Q(user__family=user.family, is_personal=False) |  # Spese famiglia (non personali)
+                    Q(shared_with=user)  # Spese condivise direttamente
+                ).distinct()
 
         # Filtro per range di date
         date_from = self.request.query_params.get('date_from')

@@ -106,7 +106,7 @@ class ExpenseSerializer(serializers.ModelSerializer):
             'id', 'user', 'category', 'category_detail', 'subcategory',
             'subcategory_detail', 'amount', 'description', 'notes', 'date',
             'payment_method', 'payment_source', 'payment_type', 'my_share_amount', 'paid_by_user', 'status', 'receipt', 'shared_with',
-            'shared_with_details', 'is_recurring', 'budget', 'budget_detail',
+            'shared_with_details', 'is_recurring', 'is_personal', 'budget', 'budget_detail',
             'spending_plan', 'attachments', 'quote', 'split_amount', 'has_quote', 'total_paid_amount',
             'remaining_amount', 'payment_progress_percentage', 'paid_quote_count',
             'total_quote_count', 'next_due_quota', 'my_share', 'other_share', 'created_at', 'updated_at'
@@ -187,7 +187,7 @@ class ExpenseCreateUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'category', 'subcategory', 'amount', 'description', 'notes',
             'date', 'payment_method', 'payment_source', 'payment_type', 'my_share_amount', 'paid_by_user', 'status', 'receipt', 'shared_with',
-            'is_recurring', 'budget', 'spending_plan'
+            'is_recurring', 'is_personal', 'budget', 'spending_plan'
         ]
 
     def to_internal_value(self, data):
